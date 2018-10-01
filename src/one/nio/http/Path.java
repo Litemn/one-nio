@@ -25,4 +25,5 @@ import java.lang.annotation.Target;
 @Target(ElementType.METHOD)
 public @interface Path {
     String[] value();
+    HttpMethod method() default HttpMethod.ANY;
 }

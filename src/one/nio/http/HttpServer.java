@@ -17,18 +17,19 @@
 package one.nio.http;
 
 import one.nio.http.gen.RequestHandlerGenerator;
+import one.nio.net.Socket;
 import one.nio.server.RejectedSessionException;
 import one.nio.server.Server;
-import one.nio.net.Socket;
 
 import java.io.IOException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.Map;
 
 public class HttpServer extends Server {
-    private final Map<String, RequestHandler> defaultHandlers = new HashMap<>();
+    private final Map<String, Map<HttpMethod, RequestHandler>> defaultHandlers = new HashMap<>();
     private final Map<String, Map<String, RequestHandler>> handlersByAlias = new HashMap<>();
     private final Map<String, Map<String, RequestHandler>> handlersByHost = new HashMap<>();
 
@@ -59,13 +60,25 @@ public class HttpServer extends Server {
     public void handleRequest(Request request, HttpSession session) throws IOException {
         RequestHandler handler = findHandlerByHost(request);
         if (handler == null) {
-            handler = defaultHandlers.get(request.getPath());
+            handler = fundHandlerByMethod(request);
         }
 
         if (handler != null) {
             handler.handleRequest(request, session);
         } else {
             handleDefault(request, session);
+        }
+    }
+
+    private RequestHandler fundHandlerByMethod(Request request) {
+        Map<HttpMethod, RequestHandler> handlers = defaultHandlers.get(request.getPath());
+        if (handlers == null) {
+            return null;
+        }
+        if (handlers.containsKey(HttpMethod.fromMethod(request.getMethod()))) {
+            return handlers.get(HttpMethod.fromMethod(request.getMethod()));
+        } else {
+            return handlers.get(HttpMethod.ANY);
         }
     }
 
@@ -118,7 +131,12 @@ public class HttpServer extends Server {
                     }
 
                     if (aliases == null || aliases.length == 0) {
-                        defaultHandlers.put(path, requestHandler);
+                        Map<HttpMethod, RequestHandler> handlers = defaultHandlers.get(path);
+                        if (handlers == null) {
+                            handlers = new EnumMap<>(HttpMethod.class);
+                            defaultHandlers.put(path, handlers);
+                        }
+                        handlers.put(annotation.method(), requestHandler);
                     } else {
                         for (String alias : aliases) {
                             Map<String, RequestHandler> handlers = handlersByAlias.get(alias);
