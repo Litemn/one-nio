@@ -60,7 +60,7 @@ public class HttpServer extends Server {
     public void handleRequest(Request request, HttpSession session) throws IOException {
         RequestHandler handler = findHandlerByHost(request);
         if (handler == null) {
-            handler = fundHandlerByMethod(request);
+            handler = findHandlerByMethod(request);
         }
 
         if (handler != null) {
@@ -70,7 +70,7 @@ public class HttpServer extends Server {
         }
     }
 
-    private RequestHandler fundHandlerByMethod(Request request) {
+    private RequestHandler findHandlerByMethod(Request request) {
         Map<HttpMethod, RequestHandler> handlers = defaultHandlers.get(request.getPath());
         if (handlers == null) {
             return null;

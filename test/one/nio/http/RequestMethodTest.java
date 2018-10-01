@@ -11,7 +11,7 @@ import java.util.EnumSet;
 
 import static org.junit.Assert.assertEquals;
 
-public class RequstMethodTest {
+public class RequestMethodTest {
 
     private static final String URL = "http://127.0.0.1:8181";
 
@@ -34,53 +34,64 @@ public class RequstMethodTest {
         }
 
         @Path(value = "/GET", method = HttpMethod.GET)
-        public Response get(Request request) {
+        public Response get() {
             return Response.ok(Response.EMPTY);
         }
 
         @Path(value = "/PUT", method = HttpMethod.PUT)
-        public Response put(Request request) {
+        public Response put() {
             return Response.ok(Response.EMPTY);
         }
 
         @Path(value = "/ANY")
-        public Response any(Request request) {
+        public Response any() {
             return Response.ok(Response.EMPTY);
         }
 
         @Path(value = "/POST", method = HttpMethod.POST)
-        public Response post(Request request) {
+        public Response post() {
             return Response.ok(Response.EMPTY);
         }
 
         @Path(value = "/CONNECT", method = HttpMethod.CONNECT)
-        public Response connect(Request request) {
+        public Response connect() {
             return Response.ok(Response.EMPTY);
         }
 
         @Path(value = "/DELETE", method = HttpMethod.DELETE)
-        public Response delete(Request request) {
+        public Response delete() {
             return Response.ok(Response.EMPTY);
         }
 
         @Path(value = "/HEAD", method = HttpMethod.HEAD)
-        public Response head(Request request) {
+        public Response head() {
             return Response.ok(Response.EMPTY);
         }
 
         @Path(value = "/OPTIONS", method = HttpMethod.OPTIONS)
-        public Response options(Request request) {
+        public Response options() {
             return Response.ok(Response.EMPTY);
         }
 
         @Path(value = "/PATCH", method = HttpMethod.PATCH)
-        public Response patch(Request request) {
+        public Response patch() {
             return Response.ok(Response.EMPTY);
         }
 
         @Path(value = "/TRACE", method = HttpMethod.TRACE)
-        public Response trace(Request request) {
+        public Response trace() {
             return Response.ok(Response.EMPTY);
+        }
+
+
+        @Path(value = "/SAME", method = HttpMethod.GET)
+        public Response sameGet() {
+            return Response.ok("GET");
+        }
+
+        @Path(value = "/SAME", method = HttpMethod.PUT)
+        public Response samePut(Request request) {
+            return Response.ok("PUT");
         }
     }
 
@@ -105,6 +116,16 @@ public class RequstMethodTest {
         for (HttpMethod method : HTTP_METHODS) {
             verify(method.getType(), "/ANY", 200);
         }
+    }
+
+    @Test
+    public void testSame() throws Exception {
+        Response responsePut = client.put("/SAME/SAME");
+        assertEquals(200, responsePut.getStatus());
+        assertEquals("PUT", responsePut.getBodyUtf8());
+        Response responseGet = client.get("/SAME/SAME");
+        assertEquals(200, responseGet.getStatus());
+        assertEquals("GET", responseGet.getBodyUtf8());
     }
 
     @Test
