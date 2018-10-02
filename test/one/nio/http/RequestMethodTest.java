@@ -120,10 +120,10 @@ public class RequestMethodTest {
 
     @Test
     public void testSame() throws Exception {
-        Response responsePut = client.put("/SAME/SAME");
+        Response responsePut = client.put("/SAME");
         assertEquals(200, responsePut.getStatus());
         assertEquals("PUT", responsePut.getBodyUtf8());
-        Response responseGet = client.get("/SAME/SAME");
+        Response responseGet = client.get("/SAME");
         assertEquals(200, responseGet.getStatus());
         assertEquals("GET", responseGet.getBodyUtf8());
     }

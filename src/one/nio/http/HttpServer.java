@@ -30,15 +30,15 @@ import java.util.Map;
 
 public class HttpServer extends Server {
     private final Map<String, Map<HttpMethod, RequestHandler>> defaultHandlers = new HashMap<>();
-    private final Map<String, Map<String, RequestHandler>> handlersByAlias = new HashMap<>();
-    private final Map<String, Map<String, RequestHandler>> handlersByHost = new HashMap<>();
+    private final Map<String, Map<String, Map<HttpMethod, RequestHandler>>> handlersByAlias = new HashMap<>();
+    private final Map<String, Map<String, Map<HttpMethod, RequestHandler>>> handlersByHost = new HashMap<>();
 
     public HttpServer(HttpServerConfig config, Object... routers) throws IOException {
         super(config);
 
         if (config.virtualHosts != null) {
             for (Map.Entry<String, String[]> virtualHost : config.virtualHosts.entrySet()) {
-                Map<String, RequestHandler> handlers = new HashMap<>();
+                Map<String, Map<HttpMethod, RequestHandler>> handlers = new HashMap<>();
                 handlersByAlias.put(virtualHost.getKey(), handlers);
                 for (String host : virtualHost.getValue()) {
                     handlersByHost.put(host.toLowerCase(), handlers);
@@ -97,12 +97,20 @@ public class HttpServer extends Server {
             return null;
         }
 
-        Map<String, RequestHandler> handlers = handlersByHost.get(host.toLowerCase());
+        Map<String, Map<HttpMethod, RequestHandler>> handlers = handlersByHost.get(host.toLowerCase());
         if (handlers == null) {
             return null;
         }
 
-        return handlers.get(request.getPath());
+        if (handlers.containsKey(request.getPath())) {
+            RequestHandler requestHandler = handlers.get(request.getPath()).get(HttpMethod.fromMethod(request.getMethod()));
+            if (requestHandler != null) {
+                return requestHandler;
+            }
+            return handlers.get(request.getPath()).get(HttpMethod.ANY);
+
+        }
+        return null;
     }
 
     public void addRequestHandlers(Object router) {
@@ -139,10 +147,16 @@ public class HttpServer extends Server {
                         handlers.put(annotation.method(), requestHandler);
                     } else {
                         for (String alias : aliases) {
-                            Map<String, RequestHandler> handlers = handlersByAlias.get(alias);
-                            if (handlers != null) {
-                                handlers.put(path, requestHandler);
+                            Map<String, Map<HttpMethod, RequestHandler>> map = handlersByAlias.get(alias);
+                            if (map != null) {
+                                Map<HttpMethod, RequestHandler> handlers = map.get(path);
+                                if (handlers == null) {
+                                    handlers = new EnumMap<>(HttpMethod.class);
+                                    map.put(path, handlers);
+                                }
+                                handlers.put(annotation.method(), requestHandler);
                             }
+
                         }
                     }
                 }
